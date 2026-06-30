@@ -4,12 +4,20 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/tejasjadhav2024/ratelimiter-gateway/internal/middleware"
+	"github.com/tejasjadhav2024/ratelimiter-gateway/internal/ratelimiter"
 )
 
 func main() {
-	http.HandleFunc("/ping", middleware.AuthMiddleware(pingHandler))
+	limiter := ratelimiter.NewFixedWindowLimiter(5, 60*time.Second)
+
+	handler := middleware.AuthMiddleware(
+		middleware.RateLimitMiddleware(limiter)(pingHandler),
+	)
+
+	http.HandleFunc("/ping", handler)
 
 	log.Println("Server starting on port 8080...")
 	err := http.ListenAndServe(":8080", nil)
